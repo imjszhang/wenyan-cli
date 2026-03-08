@@ -18,16 +18,16 @@ export async function getInputContent(
 ): Promise<{ content: string; absoluteDirPath: string | undefined }> {
     let absoluteDirPath: string | undefined = undefined;
 
-    // 1. 尝试从 Stdin 读取
-    if (!inputContent && !process.stdin.isTTY) {
-        inputContent = await readStdin();
-    }
-
-    // 2. 尝试从文件读取
+    // 1. 尝试从文件读取（优先）
     if (!inputContent && file) {
         const normalizePath = getNormalizeFilePath(file);
         inputContent = await fs.readFile(normalizePath, "utf-8");
         absoluteDirPath = path.dirname(normalizePath);
+    }
+
+    // 2. 无文件时尝试从 Stdin 读取
+    if (!inputContent && !process.stdin.isTTY) {
+        inputContent = await readStdin();
     }
 
     // 3. 校验输入

@@ -114,7 +114,7 @@ export function createProgram(version: string = pkg.version): Command {
         .command("serve")
         .description("Start a server to provide HTTP API for rendering and publishing")
         .option("-p, --port <port>", "Port to listen on (default: 3000)", "3000")
-        .option("--api-key <apiKey>", "API key for authentication")
+        .option("--api-key <apiKey>", "API key for authentication (or env WENYAN_API_KEY)")
         .option("--tunnel", "Enable Cloudflare Tunnel to expose server to the internet")
         .option("--cf-api-token <token>", "Cloudflare API Token (or env CF_API_TOKEN)")
         .option("--cf-account-id <id>", "Cloudflare Account ID (or env CF_ACCOUNT_ID)")
@@ -148,7 +148,8 @@ export function createProgram(version: string = pkg.version): Command {
                           }
                         : undefined;
 
-                    await serveCommand({ port, version, apiKey: options.apiKey, tunnel: tunnelConfig });
+                    const apiKey = options.apiKey || process.env.WENYAN_API_KEY;
+                    await serveCommand({ port, version, apiKey, tunnel: tunnelConfig });
                 } catch (error: any) {
                     console.error(error.message);
                     process.exit(1);
