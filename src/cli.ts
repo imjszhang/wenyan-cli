@@ -115,16 +115,46 @@ export function createProgram(version: string = pkg.version): Command {
         .description("Start a server to provide HTTP API for rendering and publishing")
         .option("-p, --port <port>", "Port to listen on (default: 3000)", "3000")
         .option("--api-key <apiKey>", "API key for authentication")
-        .action(async (options: { port?: string; apiKey?: string }) => {
-            try {
-                const { serveCommand } = await import("./commands/serve.js");
-                const port = options.port ? parseInt(options.port, 10) : 3000;
-                await serveCommand({ port, version, apiKey: options.apiKey });
-            } catch (error: any) {
-                console.error(error.message);
-                process.exit(1);
-            }
-        });
+        .option("--tunnel", "Enable Cloudflare Tunnel to expose server to the internet")
+        .option("--cf-api-token <token>", "Cloudflare API Token (or env CF_API_TOKEN)")
+        .option("--cf-account-id <id>", "Cloudflare Account ID (or env CF_ACCOUNT_ID)")
+        .option("--cf-zone-id <id>", "Cloudflare Zone ID (or env CF_ZONE_ID)")
+        .option("--cf-hostname <hostname>", "Tunnel hostname (or env CF_HOSTNAME, e.g. wenyan.example.com)")
+        .option("--cloudflared-path <path>", "Custom path to cloudflared binary")
+        .action(
+            async (options: {
+                port?: string;
+                apiKey?: string;
+                tunnel?: boolean;
+                cfApiToken?: string;
+                cfAccountId?: string;
+                cfZoneId?: string;
+                cfHostname?: string;
+                cloudflaredPath?: string;
+            }) => {
+                try {
+                    const { serveCommand } = await import("./commands/serve.js");
+                    const port = options.port ? parseInt(options.port, 10) : 3000;
+
+                    const tunnelConfig = options.tunnel
+                        ? {
+                              cloudflare: {
+                                  apiToken: options.cfApiToken || process.env.CF_API_TOKEN || "",
+                                  accountId: options.cfAccountId || process.env.CF_ACCOUNT_ID || "",
+                                  zoneId: options.cfZoneId || process.env.CF_ZONE_ID || "",
+                                  hostname: options.cfHostname || process.env.CF_HOSTNAME || "",
+                              },
+                              cloudflaredPath: options.cloudflaredPath,
+                          }
+                        : undefined;
+
+                    await serveCommand({ port, version, apiKey: options.apiKey, tunnel: tunnelConfig });
+                } catch (error: any) {
+                    console.error(error.message);
+                    process.exit(1);
+                }
+            },
+        );
 
     return program;
 }

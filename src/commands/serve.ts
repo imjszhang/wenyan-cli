@@ -6,10 +6,18 @@ import { configDir } from "@wenyan-md/core/wrapper";
 import multer from "multer";
 import { publishToWechatDraft } from "@wenyan-md/core/publish";
 
+import type { TunnelCloudflareConfig } from "../tunnel/types.js";
+
+export interface TunnelOptions {
+    cloudflare: TunnelCloudflareConfig;
+    cloudflaredPath?: string;
+}
+
 export interface ServeOptions {
     port?: number;
     version?: string;
     apiKey?: string;
+    tunnel?: TunnelOptions;
 }
 
 interface RenderRequest {
@@ -175,15 +183,36 @@ export async function serveCommand(options: ServeOptions) {
         });
     });
 
+    // Tunnel 状态接口
+    if (options.tunnel) {
+        app.get("/tunnel/status", auth, async (_req: Request, res: Response) => {
+            const { getTunnelRuntime } = await import("../tunnel/index.js");
+            res.json(getTunnelRuntime());
+        });
+    }
+
     app.use(errorHandler);
 
     return new Promise<void>((resolve, reject) => {
-        const server = app.listen(port, () => {
+        const server = app.listen(port, async () => {
             console.log(`文颜 Server 已启动，监听端口 ${port}`);
             console.log(`健康检查：http://localhost:${port}/health`);
             console.log(`鉴权探针：http://localhost:${port}/verify`);
             console.log(`发布接口：POST http://localhost:${port}/publish`);
             console.log(`上传接口：POST http://localhost:${port}/upload`);
+
+            // 启动 Cloudflare Tunnel
+            if (options.tunnel) {
+                const { cloudflare, cloudflaredPath } = options.tunnel;
+                if (!cloudflare.apiToken || !cloudflare.accountId || !cloudflare.zoneId || !cloudflare.hostname) {
+                    console.error(
+                        "wenyan-tunnel: 缺少必要的 Cloudflare 配置。需要：--cf-api-token, --cf-account-id, --cf-zone-id, --cf-hostname（或对应环境变量）",
+                    );
+                } else {
+                    const { startTunnel } = await import("../tunnel/index.js");
+                    await startTunnel({ cloudflare, localPort: port, cloudflaredPath });
+                }
+            }
         });
 
         server.on("error", (err: any) => {
@@ -195,17 +224,22 @@ export async function serveCommand(options: ServeOptions) {
             }
         });
 
-        process.on("SIGINT", () => {
+        const gracefulShutdown = async () => {
             console.log("\n正在关闭服务器...");
+
+            if (options.tunnel) {
+                const { stopTunnel } = await import("../tunnel/index.js");
+                await stopTunnel();
+            }
+
             server.close(() => {
                 console.log("服务器已关闭");
                 resolve();
             });
-        });
+        };
 
-        process.on("SIGTERM", () => {
-            server.close(() => resolve());
-        });
+        process.on("SIGINT", () => gracefulShutdown());
+        process.on("SIGTERM", () => gracefulShutdown());
     });
 }
 
