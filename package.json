@@ -34,6 +34,7 @@
     "build": "tsc",
     "upgrade:core": "pnpm update @wenyan-md/core",
     "prepublishOnly": "pnpm upgrade:core && pnpm build",
+    "start": "pnpm build && pnpm dotenv -e .env -- node ./dist/cli.js serve",
     "server": "pnpm build && pnpm dotenv -e .env.test -- node ./dist/cli.js serve",
     "test:bin": "pnpm build && node ./dist/cli.js render -f tests/publish.md -c tests/manhua.css --no-mac-style",
     "test:cli": "vitest run tests/cli.test.ts",
