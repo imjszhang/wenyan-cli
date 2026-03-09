@@ -1,0 +1,224 @@
+:root {
+    /* 明亮风格 */
+    --js-bg: #ffffff;
+    --js-bg-card: #f7f8fa;
+    --js-bg-code: #f5f6f8;
+    --js-text-title: #222222;
+    --js-text-body: #333333;
+    --js-text-meta: #999999;
+    --js-text-bold: #222222;
+    --js-color-link: #576b95;
+    --js-color-accent: rgb(215, 90, 73);
+    --js-color-divider: rgba(0, 0, 0, 0.06);
+}
+
+#wenyan {
+    font-family: "PingFang SC", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif;
+    font-size: 17px;
+    color: var(--js-text-body);
+    background-color: var(--js-bg);
+    padding: 0 10px;
+    line-height: 1.6;
+    letter-spacing: 0.544px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+#wenyan * {
+    box-sizing: border-box;
+}
+
+/* --- 标题 --- */
+#wenyan h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--js-text-title);
+    line-height: 1.4;
+    margin: 0 0 14px;
+    padding: 0;
+}
+
+#wenyan h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--js-text-title);
+    line-height: 1.4;
+    margin: 32px 0 16px;
+    padding: 0;
+}
+
+#wenyan h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--js-text-title);
+    line-height: 1.4;
+    margin: 28px 0 14px;
+}
+
+/* --- 正文 --- */
+#wenyan p {
+    margin: 0 0 24px;
+    font-size: 17px;
+    color: var(--js-text-body);
+    line-height: 1.6;
+}
+
+#wenyan p strong,
+#wenyan li strong {
+    color: var(--js-text-bold);
+    font-weight: 700;
+}
+
+/* --- 链接 --- */
+#wenyan a {
+    color: var(--js-color-link);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(87, 107, 149, 0.3);
+    word-break: break-all;
+}
+
+/* --- 列表 --- */
+#wenyan ul,
+#wenyan ol {
+    padding-left: 24px;
+    margin: 0 0 24px;
+    color: var(--js-text-body);
+}
+
+#wenyan li {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+/* --- 图片 --- */
+#wenyan img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 16px 0;
+    border-radius: 4px;
+}
+
+/* --- 引用块 --- */
+#wenyan blockquote {
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-left: 3px solid var(--js-color-divider);
+    background-color: var(--js-bg-card);
+    color: var(--js-text-meta);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+#wenyan blockquote p {
+    color: var(--js-text-meta);
+    margin-bottom: 8px;
+}
+
+#wenyan blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* --- 代码块 --- */
+#wenyan pre {
+    margin: 16px 0;
+    background-color: var(--js-bg-code);
+    border: 1px solid var(--js-color-divider);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+#wenyan pre code {
+    display: block;
+    padding: 16px;
+    color: #383a42;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: auto;
+    font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+}
+
+/* --- 行内代码 --- */
+#wenyan p code,
+#wenyan li code,
+#wenyan h2 code,
+#wenyan h3 code {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--js-color-accent);
+    padding: 2px 6px;
+    margin: 0 2px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+}
+
+/* --- 表格 --- */
+#wenyan table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 20px 0;
+    font-size: 15px;
+}
+
+#wenyan table th {
+    background-color: var(--js-bg-card);
+    color: var(--js-text-title);
+    padding: 10px 12px;
+    border: 1px solid var(--js-color-divider);
+    font-weight: 600;
+    text-align: left;
+}
+
+#wenyan table td {
+    padding: 8px 12px;
+    border: 1px solid var(--js-color-divider);
+    color: var(--js-text-body);
+}
+
+#wenyan table tr:nth-child(even) {
+    background-color: var(--js-bg-card);
+}
+
+/* --- 分割线 --- */
+#wenyan hr {
+    border: none;
+    height: 1px;
+    background-color: var(--js-color-divider);
+    margin: 28px 0;
+}
+
+/* --- 脚注（公众号链接转脚注）--- */
+#wenyan .footnote-word {
+    color: var(--js-color-link);
+    font-weight: normal;
+}
+
+#wenyan .footnote-ref {
+    color: var(--js-color-link);
+    font-weight: normal;
+}
+
+#wenyan .footnotes-sep {
+    border: none;
+    height: 1px;
+    background-color: var(--js-color-divider);
+    margin: 32px 0 16px;
+}
+
+#wenyan .footnote-item {
+    font-size: 13px;
+    color: var(--js-text-meta);
+    line-height: 1.6;
+    margin: 4px 0;
+}
+
+#wenyan .footnote-item p {
+    font-size: 13px;
+    color: var(--js-text-meta);
+    margin-bottom: 4px;
+}
+
+/* --- 公式（KaTeX）--- */
+#wenyan .katex {
+    color: var(--js-text-title);
+}
