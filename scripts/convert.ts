@@ -6,6 +6,9 @@ const OUTPUT_DIR = path.join(WORK_DIR, "output");
 
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
 
+/** 无封面且正文无图片时，补充的默认头图（满足微信公众号发布要求） */
+const FALLBACK_COVER_URL = "https://picsum.photos/800/450";
+
 const TEMPLATE_AUTHOR_MAP: Record<string, string> = {
     "yangxia-series": "JS",
 };
@@ -82,6 +85,10 @@ async function collectImages(imageDir: string): Promise<{ cover: string | null; 
     return { cover: coverFile, images: contentImages };
 }
 
+function hasImageInBody(body: string): boolean {
+    return /!\[[^\]]*\]\([^)]+\)/.test(body) || /<img\s+[^>]*src\s*=\s*["'][^"']+["']/.test(body);
+}
+
 function replaceImagePlaceholders(body: string, imageDir: string, images: string[]): string {
     const placeholderRe = /^(\[图片\]|图片)$/gm;
     let idx = 0;
@@ -152,11 +159,16 @@ async function convert(id: string, options: ConvertOptions) {
 
     const { cover, images } = await collectImages(imageDir);
 
-    const coverPath = cover ? `./${id}/${cover}` : undefined;
-    console.log(`  封面: ${coverPath ?? "(无，将使用正文第一张图)"}`);
-    console.log(`  图片: ${images.length} 张`);
-
+    let coverPath = cover ? `./${id}/${cover}` : undefined;
     const processedBody = replaceImagePlaceholders(bodyWithoutTitle, id, images);
+
+    if (!coverPath && !hasImageInBody(processedBody)) {
+        coverPath = FALLBACK_COVER_URL;
+        console.log(`  封面: (无) → 已补充默认头图 ${FALLBACK_COVER_URL}`);
+    } else {
+        console.log(`  封面: ${coverPath ?? "(无，将使用正文第一张图)"}`);
+    }
+    console.log(`  图片: ${images.length} 张`);
 
     const newFrontmatter = buildFrontmatter({
         title,
