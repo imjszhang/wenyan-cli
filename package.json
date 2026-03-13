@@ -42,7 +42,8 @@
     "test:publish": "vitest run tests/publish.test.ts",
     "test:realPublish": "pnpm build && pnpm dotenv -e .env.test -- node ./dist/cli.js publish -f tests/publish.md -c tests/manhua.css --no-mac-style",
     "test:serverPublish": "pnpm build && node ./dist/cli.js publish -f tests/publish.md -c tests/manhua.css --no-mac-style --server http://localhost:3000",
-    "convert": "tsx scripts/convert.ts"
+    "convert": "tsx scripts/convert.ts",
+    "publish:work": "tsx scripts/publish.ts"
   },
   "packageManager": "pnpm@10.7.1",
   "dependencies": {
