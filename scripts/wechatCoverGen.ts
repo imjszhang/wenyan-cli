@@ -37,6 +37,7 @@ interface CliArgs {
   type: string;
   output: string | null;
   keepOriginal: boolean;
+  inputImage: string | null;
   help: boolean;
 }
 
@@ -47,6 +48,7 @@ function parseArgs(): CliArgs {
     type: "main",
     output: null,
     keepOriginal: false,
+    inputImage: null,
     help: false,
   };
 
@@ -63,6 +65,9 @@ function parseArgs(): CliArgs {
         break;
       case "--keep-original":
         args.keepOriginal = true;
+        break;
+      case "--input-image":
+        args.inputImage = argv[++i] ?? null;
         break;
       case "--help":
       case "-h":
@@ -91,6 +96,7 @@ function showHelp(): void {
 
 🔧 参数:
   --prompt <text>      图片生成提示词（必需）
+  --input-image <path> 参考图片路径（可选，用于图生图/多图融合）
   --type <main|sub>    封面类型（默认: main）
   --output <path>      输出文件路径（可选，默认自动生成）
   --keep-original      保留裁切前的原图（默认不保留）
@@ -172,8 +178,23 @@ async function main(): Promise<void> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").substring(0, 19);
   const sessionName = `wechat_cover_${timestamp}`;
 
+  let inputImages: string[] = [];
+  if (args.inputImage) {
+    const inputPath = path.resolve(args.inputImage);
+    if (!fs.existsSync(inputPath)) {
+      console.error(`❌ 参考图片不存在: ${inputPath}`);
+      process.exit(1);
+    }
+    const buf = fs.readFileSync(inputPath);
+    const ext = path.extname(inputPath).toLowerCase().slice(1) || "jpeg";
+    const mime = ext === "jpg" ? "jpeg" : ext;
+    inputImages = [`data:image/${mime};base64,${buf.toString("base64")}`];
+    console.log(`📎 已加载参考图片: ${inputPath}\n`);
+  }
+
   const generator = new DoubaoImageGenerator({
     prompt: args.prompt,
+    inputImages,
     size: "2K",
     count: 1,
     responseFormat: "url",
