@@ -42,7 +42,9 @@
     "test:publish": "vitest run tests/publish.test.ts",
     "test:realPublish": "pnpm build && pnpm dotenv -e .env.test -- node ./dist/cli.js publish -f tests/publish.md -c tests/manhua.css --no-mac-style",
     "test:serverPublish": "pnpm build && node ./dist/cli.js publish -f tests/publish.md -c tests/manhua.css --no-mac-style --server http://localhost:3000",
+    "import": "tsx scripts/import.ts",
     "convert": "tsx scripts/convert.ts",
+    "cover": "pnpm dotenv -e .env -- tsx scripts/cover.ts",
     "publish:work": "tsx scripts/publish.ts",
     "doubao:gen": "pnpm dotenv -e .env -- tsx scripts/doubaoImageGenerator.ts",
     "wechat:cover": "pnpm dotenv -e .env -- tsx scripts/wechatCoverGen.ts"

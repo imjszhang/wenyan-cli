@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
-const WORK_OUTPUT = path.join(ROOT, "work_dir", "output");
+const WORK_DIR = path.join(ROOT, "work_dir");
 
 async function loadEnv(envPath: string): Promise<void> {
     try {
@@ -26,8 +26,25 @@ async function loadEnv(envPath: string): Promise<void> {
     }
 }
 
+/**
+ * article-path 格式: <series>/<id>  (如 yangxia-series/07)
+ * 也兼容直接传完整文件路径。
+ */
+function resolveOutputFile(input: string): string {
+    if (input.includes("/") || input.includes("\\")) {
+        const asArticlePath = path.join(WORK_DIR, input, "output.md");
+        if (!path.isAbsolute(input)) {
+            return asArticlePath;
+        }
+        return input;
+    }
+    console.error(`✗ 无效的 article-path: ${input}`);
+    console.error("  格式应为 <series>/<id>，如 yangxia-series/07");
+    process.exit(1);
+}
+
 function parseArgs(argv: string[]): { file: string; envFile: string; extraArgs: string[] } {
-    let file = "";
+    let fileArg = "";
     let envFile = ".env";
     const extraArgs: string[] = [];
     let i = 2;
@@ -36,35 +53,25 @@ function parseArgs(argv: string[]): { file: string; envFile: string; extraArgs: 
         const arg = argv[i];
         if (arg === "--env" && i + 1 < argv.length) {
             envFile = argv[++i];
-        } else if (!arg.startsWith("--") && !file) {
-            file = arg;
+        } else if (!arg.startsWith("--") && !fileArg) {
+            fileArg = arg;
         } else if (arg !== "--env") {
             extraArgs.push(arg);
         }
         i++;
     }
 
-    if (!file) {
-        console.error("用法: pnpm publish:work <文件> [wenyan 参数...]");
-        console.error("  或: pnpm publish:work 01 [--env .env.test]");
-        console.error("");
+    if (!fileArg) {
+        console.error("用法: pnpm publish:work <article-path> [--env .env文件] [wenyan 参数...]");
         console.error("示例:");
-        console.error("  pnpm publish:work 01");
-        console.error("  pnpm publish:work work_dir/output/01.md");
-        console.error("  pnpm publish:work 01 --theme lapis");
-        console.error("  pnpm publish:work 01 --env .env.test");
+        console.error("  pnpm publish:work yangxia-series/07");
+        console.error("  pnpm publish:work yangxia-series/07 --theme lapis");
+        console.error("  pnpm publish:work yangxia-series/07 --env .env.test");
         process.exit(1);
     }
 
-    // 若为短编号（如 01），解析为 work_dir/output/01.md
-    const resolvedFile =
-        /^\d+$/.test(file) || (file.length <= 3 && /^\w+$/.test(file))
-            ? path.join(WORK_OUTPUT, `${file}.md`)
-            : path.isAbsolute(file)
-              ? file
-              : path.resolve(process.cwd(), file);
-
-    return { file: resolvedFile, envFile, extraArgs };
+    const file = resolveOutputFile(fileArg);
+    return { file, envFile, extraArgs };
 }
 
 async function ensureBuilt(): Promise<void> {
@@ -101,6 +108,7 @@ async function main() {
         await fs.access(file);
     } catch {
         console.error(`文件不存在: ${file}`);
+        console.error("请先运行 pnpm convert <article-path> 生成 output.md");
         process.exit(1);
     }
 
