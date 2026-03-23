@@ -1,7 +1,7 @@
 ---
 name: wenyan-cli-scripts
 description: >-
-  指导使用 wenyan-cli 项目 scripts 目录下的工具脚本。适用于 Markdown 文章导入、转换、微信公众号发布、豆包 AI 图片生成、公众号封面图生成等场景。当用户提及 import、convert、publish、doubao、wechat cover、图片生成、文章转换或发布时使用。
+  指导使用 wenyan-cli 项目 scripts 目录下的工具脚本。含「标准发布流程」：从 OpenClaw/prism 产出的 Markdown 导入 work_dir、js-vi 封面、convert、发布到公众号草稿。当用户提及 import、convert、cover、publish、发布流程、公众号草稿时使用。
 ---
 
 # Wenyan-CLI 脚本工具
@@ -48,6 +48,83 @@ work_dir/
 ```
 
 贯穿所有命令的统一标识：`article-path` = `<series>/<id>`，如 `yangxia-series/07`。
+
+---
+
+## 标准发布流程（公众号草稿）
+
+从任意路径的 Markdown（例如 OpenClaw prism 产出）到微信公众号草稿箱的推荐顺序如下。
+
+### 1. 导入
+
+```bash
+pnpm import <源文件绝对或相对路径>
+```
+
+- 系列默认从正文前 YAML 的 `template` 读取（如 `yangxia-series`）；编号默认取文件名（如 `08.md` → `08`）。
+- 目标：`work_dir/<series>/<id>/source.md`。
+- 若该篇已存在，需覆盖时在 **路径后** 加 `--force`；pnpm 会吞掉脚本参数时，用：`pnpm import -- <路径> --force`。
+- 无 `pnpm-lock.yaml` 时可用：`npx tsx scripts/import.ts <路径> [--force]`。
+
+### 2. 封面（js-vi，养虾系列）
+
+```bash
+pnpm cover <article-path>              # 生成 cover-config.json（标题常从 source.md 的 # 标题预填）
+# 按需编辑 work_dir/.../cover-config.json（见下）
+pnpm cover <article-path> --gen        # 生成 cover.png、thumb.png
+```
+
+- **环境变量**：`.env` 中配置 `JS_VI_TEMPLATES_DIR`（指向 `js-vi-templates-private` 仓库根目录）。仅 `--gen` 步骤依赖该变量。
+- **系列**：`pnpm cover` 目前仅对 `yangxia-series` 有预设；其他系列需扩展 `scripts/cover.ts` 的 `SERIES_COVER_MAP`。
+- **封面标题换行**：在 `cover-config.json` 里 `posters[].content.title` 使用 JSON 换行符 `\n`（例如第一行问句、第二行以「5」开头），**两处 poster**（首条/次条）建议保持一致。
+- **副标题**：编辑 `subtitle`，首条里默认可能是 `// TODO: 替换为副标题`。
+
+### 3. 正文配图（可选）
+
+- 将 `jpg/png/...` 放入 `work_dir/<series>/<id>/`，按文件名排序对应正文中的 `[图片]` 或单独一行的 `图片`。
+- **`cover.*`、`thumb.*` 不会**参与正文占位符替换，避免次条缩略图被插进正文。
+
+### 4. 转换
+
+```bash
+pnpm convert <article-path> [--author 作者] [--source-url URL]
+```
+
+- 读取 `source.md`，写出同目录下的 `output.md`。
+- **封面路径约定**：`output.md` 与图片在同一目录，frontmatter 里封面为 **`./cover.png`**（或 `./cover.jpg`），**不要**写成 `./yangxia-series/08/cover.png`，否则发布时路径会被重复拼接导致找不到文件。
+- **微信封面**：不要使用不可控的外链随机图作封面；无本地封面且无正文内嵌图时，`convert` 会提示补充 `cover.*` 或先跑 `pnpm cover`，**不会**再自动填外链占位。
+- 作者：若源 frontmatter 含 `template: yangxia-series`，未传 `--author` 时默认映射为 `JS`（见 `scripts/convert.ts` 中 `TEMPLATE_AUTHOR_MAP`）。
+
+### 5. 发布
+
+```bash
+pnpm publish:work <article-path> [--theme 主题名] [--env .env文件]
+```
+
+- 实际发布文件：`work_dir/<series>/<id>/output.md`。
+- 需 `.env` 中 `WECHAT_APP_ID`、`WECHAT_APP_SECRET`。
+- 首次或 `dist/cli.js` 缺失时会自动 `pnpm build`。
+
+### 6. 改封面后再发
+
+只改文案或版式时：
+
+1. 编辑 `cover-config.json`（或改 `cover.png` 源文件后重新 `--gen`）。
+2. `pnpm cover <article-path> --gen`
+3. **若仅更换了图片文件、未改 `output.md` 文本**，一般可直接 `pnpm publish:work`（会重新上传封面）；为稳妥可再执行一次 `pnpm convert` 再发布。
+
+### 一键命令串示例（养虾第 8 篇）
+
+源文件在 OpenClaw 仓库时：
+
+```bash
+pnpm import -- "d:\github\fork\openclaw\docs\prism\outputs\yangxia-series\P25-yangxia-series\08.md" --force
+pnpm cover yangxia-series/08
+# 编辑 work_dir/yangxia-series/08/cover-config.json（title 可用 \n 换行、subtitle 等）
+pnpm cover yangxia-series/08 --gen
+pnpm convert yangxia-series/08
+pnpm publish:work yangxia-series/08
+```
 
 ---
 
@@ -232,23 +309,17 @@ pnpm wechat:cover --prompt "风景" --output ./work_dir/yangxia-series/07/cover.
 
 ---
 
-## 典型工作流
+## 典型工作流（速查）
 
-1. **导入文章**：`pnpm import <外部文章路径>`
-2. **生成封面配置**：`pnpm cover <series>/<id>`，然后编辑 `cover-config.json` 中的标题和副标题
-3. **渲染封面**：`pnpm cover <series>/<id> --gen`
-4. **准备正文配图**（如有）：将图片放入 `work_dir/<series>/<id>/`
-5. **转换**：`pnpm convert <series>/<id>` 生成 `output.md`
-6. **发布**：`pnpm publish:work <series>/<id>`
+与 **「标准发布流程」** 相同，仅作 checklist：
 
-**完整示例（养虾系列）：**
-```bash
-pnpm import d:\docs\07.md                   # → work_dir/yangxia-series/07/source.md
-pnpm cover yangxia-series/07                # → cover-config.json（编辑 title/subtitle）
-pnpm cover yangxia-series/07 --gen          # → cover.png + thumb.png
-pnpm convert yangxia-series/07              # → output.md
-pnpm publish:work yangxia-series/07         # → 公众号草稿箱
-```
+1. `pnpm import <路径>`（必要时 `-- --force`）
+2. `pnpm cover <article-path>` → 编辑 `cover-config.json` → `pnpm cover <article-path> --gen`
+3. （可选）正文配图放入文章目录
+4. `pnpm convert <article-path>`
+5. `pnpm publish:work <article-path>`
+
+细节、路径约定与再发布说明见上文 **「标准发布流程」**。
 
 ---
 
