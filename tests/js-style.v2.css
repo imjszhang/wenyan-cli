@@ -1,0 +1,48 @@
+/* 养虾日记正文样式 v2 — 微信公众号后台编辑器默认排版
+ *
+ * 对齐后台 ProseMirror：块级 margin: 0px 16px，不设字号/字色/字体。
+ * #wenyan pre 须单独成规则，避免 wenyan 注入的 font-size:12px 污染 p/h2。
+ * 空行 span leaf、hr 转 br 段落在 scripts/wechatDefaultHtml.ts 后处理。
+ */
+#wenyan p,
+#wenyan h1,
+#wenyan h2,
+#wenyan h3,
+#wenyan h4,
+#wenyan h5,
+#wenyan h6,
+#wenyan ul,
+#wenyan ol,
+#wenyan blockquote,
+#wenyan section {
+    margin: 0px 16px;
+}
+
+#wenyan pre {
+    margin: 0px 16px;
+}
+
+#wenyan blockquote {
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+#wenyan hr {
+    margin: 0px 16px;
+    border: none;
+    height: 0;
+    padding: 0;
+}
+
+#wenyan img {
+    display: block;
+    max-width: calc(100% - 32px);
+    height: auto;
+    margin: 0px 16px;
+}
+
+#wenyan .footnote-item,
+#wenyan .footnote-item p {
+    margin: 0px 16px;
+}

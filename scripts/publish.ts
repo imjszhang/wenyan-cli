@@ -4,6 +4,7 @@ import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const WORK_DIR = path.join(ROOT, "work_dir");
+const V2_THEME_FILE = path.join(ROOT, "tests", "js-style.v2.css");
 
 async function loadEnv(envPath: string): Promise<void> {
     try {
@@ -55,7 +56,7 @@ function parseArgs(argv: string[]): { file: string; envFile: string; extraArgs: 
             envFile = argv[++i];
         } else if (!arg.startsWith("--") && !fileArg) {
             fileArg = arg;
-        } else if (arg !== "--env") {
+        } else if (arg !== "--env" && arg !== "--") {
             extraArgs.push(arg);
         }
         i++;
@@ -91,6 +92,62 @@ async function ensureBuilt(): Promise<void> {
     }
 }
 
+function usesWechatDefaultV2(extraArgs: string[]): boolean {
+    for (let i = 0; i < extraArgs.length; i++) {
+        const arg = extraArgs[i];
+        if ((arg === "-c" || arg === "--custom-theme") && extraArgs[i + 1]) {
+            const themePath = path.resolve(ROOT, extraArgs[i + 1]);
+            if (themePath === V2_THEME_FILE || extraArgs[i + 1].includes("js-style.v2.css")) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+async function publishWechatV2(file: string, extraArgs: string[]): Promise<void> {
+    const { prepareRenderContext } = await import("@wenyan-md/core/wrapper");
+    const { publishToWechatDraft } = await import("@wenyan-md/core/publish");
+    const { getInputContent } = await import("../src/utils.js");
+    const { applyWeChatDefaultHtml } = await import("./wechatDefaultHtml.js");
+
+    const macStyle = !extraArgs.includes("--no-mac-style");
+    const footnote = !extraArgs.includes("--no-footnote");
+
+    const { gzhContent, absoluteDirPath } = await prepareRenderContext(
+        undefined,
+        {
+            file,
+            theme: "default",
+            customTheme: V2_THEME_FILE,
+            macStyle,
+            footnote,
+            highlight: "solarized-light",
+        },
+        getInputContent,
+    );
+
+    if (!gzhContent.title) {
+        console.error("未能找到文章标题");
+        process.exit(1);
+    }
+
+    gzhContent.content = applyWeChatDefaultHtml(gzhContent.content);
+
+    const data = await publishToWechatDraft(
+        {
+            title: gzhContent.title,
+            content: gzhContent.content,
+            cover: gzhContent.cover,
+            author: gzhContent.author,
+            source_url: gzhContent.source_url,
+        },
+        { relativePath: absoluteDirPath },
+    );
+
+    console.log(`发布成功，Media ID: ${data.media_id}`);
+}
+
 async function main() {
     const { file, envFile, extraArgs } = parseArgs(process.argv);
 
@@ -113,6 +170,11 @@ async function main() {
     }
 
     await ensureBuilt();
+
+    if (usesWechatDefaultV2(extraArgs)) {
+        await publishWechatV2(file, extraArgs);
+        return;
+    }
 
     const args = ["-f", file, ...extraArgs];
     const proc = spawn("node", [path.join(ROOT, "dist", "cli.js"), "publish", ...args], {
