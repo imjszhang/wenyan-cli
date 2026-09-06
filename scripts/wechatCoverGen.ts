@@ -16,6 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import DoubaoImageGenerator from "./doubaoImageGenerator.js";
+import { setupProxy } from "../src/proxy.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_OUTPUT_DIR = path.resolve(__dirname, "..", "work_dir", "generated_images");
@@ -157,6 +158,8 @@ async function main(): Promise<void> {
     showHelp();
     process.exit(0);
   }
+
+  await setupProxy();
 
   if (!args.prompt) {
     console.error("❌ 必须提供 --prompt 参数");

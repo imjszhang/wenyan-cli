@@ -13,6 +13,11 @@ import {
     ThemeOptions,
 } from "@wenyan-md/core/wrapper";
 import { getInputContent } from "./utils.js";
+import { setupProxy } from "./proxy.js";
+
+interface PublishCliOptions extends ClientPublishOptions {
+    proxy?: string;
+}
 
 export function createProgram(version: string = pkg.version): Command {
     const program = new Command();
@@ -46,8 +51,10 @@ export function createProgram(version: string = pkg.version): Command {
     addCommonOptions(pubCmd)
         .option("--server <url>", "Server URL to publish through (e.g. https://api.yourdomain.com)")
         .option("--api-key <apiKey>", "API key for the remote server")
-        .action(async (inputContent: string | undefined, options: ClientPublishOptions) => {
+        .option("--proxy <url>", "Proxy URL (http/https/socks5), or env HTTP_PROXY / ALL_PROXY")
+        .action(async (inputContent: string | undefined, options: PublishCliOptions) => {
             await runCommandWrapper(async () => {
+                await setupProxy(options.proxy);
                 // 如果传入了 --server，则走客户端（远程）模式
                 if (options.server) {
                     options.clientVersion = version; // 将 CLI 版本传递给服务器，便于调试和兼容性处理
@@ -65,6 +72,7 @@ export function createProgram(version: string = pkg.version): Command {
 
     addCommonOptions(renderCmd).action(async (inputContent: string | undefined, options: RenderOptions) => {
         await runCommandWrapper(async () => {
+            await setupProxy();
             const { gzhContent } = await prepareRenderContext(inputContent, options, getInputContent);
             console.log(gzhContent.content);
         });
@@ -148,6 +156,7 @@ export function createProgram(version: string = pkg.version): Command {
                           }
                         : undefined;
 
+                    await setupProxy();
                     const apiKey = options.apiKey || process.env.WENYAN_API_KEY;
                     await serveCommand({ port, version, apiKey, tunnel: tunnelConfig });
                 } catch (error: any) {

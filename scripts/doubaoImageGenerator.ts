@@ -50,6 +50,7 @@ import path from "node:path";
 import https from "node:https";
 import http from "node:http";
 import { fileURLToPath } from "node:url";
+import { setupProxy } from "../src/proxy.js";
 
 // 环境变量由 dotenv-cli 加载（运行: pnpm doubao:gen）或系统环境变量提供
 
@@ -1106,6 +1107,7 @@ function showHelp(): void {
 
 async function main(): Promise<void> {
   try {
+    await setupProxy();
     const options = parseArguments();
 
     if (options.help) {
